@@ -1,5 +1,5 @@
 import api from '../api.js';
-import { state, showToast, refreshIcons } from '../main.js';
+import { state, showToast, refreshIcons, renderApp } from '../main.js';
 import Chart from 'chart.js/auto';
 
 // Local Chart Instances to prevent memory leaks and canvas bugs
@@ -1428,7 +1428,7 @@ function renderRightTabPanel(container) {
           state.user = res.data;
           localStorage.setItem('user', JSON.stringify(res.data));
           showToast('Biometric profile updated successfully!', 'success');
-          drawDashboardContent(container);
+          renderApp();
         } catch {
           showToast('Failed to update profile', 'error');
         } finally {
