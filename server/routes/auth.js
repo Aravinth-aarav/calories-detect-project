@@ -60,7 +60,7 @@ router.post('/login', [
     const payload = { id: user.id };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, dailyCalorieGoal: user.dailyCalorieGoal, weight: user.weight, height: user.height, favorites: user.favorites } });
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, dailyCalorieGoal: user.dailyCalorieGoal, weight: user.weight, height: user.height, favorites: user.favorites, profilePhoto: user.profilePhoto } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });
