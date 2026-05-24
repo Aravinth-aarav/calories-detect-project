@@ -167,9 +167,7 @@ function drawDashboardContent(container) {
   mainContent.style.cssText = 'flex: 1; display: flex; flex-direction: column; gap: 2.5rem; overflow-x: hidden;';
   layout.appendChild(mainContent);
 
-  // 3. Header & Overview Section
-  const dashboardHeader = document.createElement('section');
-  dashboardHeader.className = 'dashboard-header';
+  // 3. Header & Overview Section (Welcome & Stats Grid)
 
   // Welcome banner row
   const welcomeRow = document.createElement('div');
@@ -189,12 +187,12 @@ function drawDashboardContent(container) {
       <div class="pulse" style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent);"></div>
     </div>
   `;
-  dashboardHeader.appendChild(welcomeRow);
+  mainContent.appendChild(welcomeRow);
 
   // Stats Grid Cards
   const statsGrid = document.createElement('div');
   statsGrid.className = 'grid-3';
-  dashboardHeader.appendChild(statsGrid);
+  // statsGrid will be appended below dynamicGrid
 
   const totalConsumed = todayLog?.totalCaloriesConsumed || 0;
   const totalBurned = todayLog?.totalCaloriesBurned || 0;
@@ -359,7 +357,7 @@ function drawDashboardContent(container) {
   const isDoubleColumn = doubleColumnTabs.includes(state.activeTab);
   dynamicGrid.className = `dashboard-grid ${isDoubleColumn ? 'double-column' : ''}`;
   mainContent.appendChild(dynamicGrid);
-  mainContent.appendChild(dashboardHeader);
+  mainContent.appendChild(statsGrid);
   mainContent.appendChild(waterTracker);
 
   // RENDER CORRESPONDING TAB VIEW
