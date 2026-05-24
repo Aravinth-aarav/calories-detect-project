@@ -132,7 +132,11 @@ function drawDashboardContent(container) {
     { id: 'history', icon: 'history', label: 'Diet Log' },
     { id: 'workouts', icon: 'trending-up', label: 'Exercise' },
     { id: 'favorites', icon: 'heart', label: 'Favorites' },
-    { id: 'bmi', icon: 'calculator', label: 'BMI Hub' }
+    { id: 'bmi', icon: 'calculator', label: 'BMI Hub' },
+    { id: 'progress', icon: 'target', label: 'Progress' },
+    { id: 'intake', icon: 'utensils', label: 'Intake Log' },
+    { id: 'burn', icon: 'flame', label: 'Active Burn' },
+    { id: 'water', icon: 'droplet', label: 'Hydration' }
   ];
 
   tabIcons.forEach(tab => {
@@ -167,7 +171,10 @@ function drawDashboardContent(container) {
   mainContent.style.cssText = 'flex: 1; display: flex; flex-direction: column; gap: 2.5rem; overflow-x: hidden;';
   layout.appendChild(mainContent);
 
-  // 3. Header & Overview Section (Welcome & Stats Grid)
+  // 3. Header & Overview Section
+  const dashboardHeader = document.createElement('section');
+  dashboardHeader.className = 'dashboard-header';
+  mainContent.appendChild(dashboardHeader);
 
   // Welcome banner row
   const welcomeRow = document.createElement('div');
@@ -187,12 +194,12 @@ function drawDashboardContent(container) {
       <div class="pulse" style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent);"></div>
     </div>
   `;
-  mainContent.appendChild(welcomeRow);
+  dashboardHeader.appendChild(welcomeRow);
 
   // Stats Grid Cards
   const statsGrid = document.createElement('div');
   statsGrid.className = 'grid-3';
-  // statsGrid will be appended below dynamicGrid
+  dashboardHeader.appendChild(statsGrid);
 
   const totalConsumed = todayLog?.totalCaloriesConsumed || 0;
   const totalBurned = todayLog?.totalCaloriesBurned || 0;
@@ -280,6 +287,7 @@ function drawDashboardContent(container) {
     flex-wrap: wrap;
     gap: 2rem;
   `;
+  mainContent.appendChild(waterTracker);
 
   const waterLeft = document.createElement('div');
   waterLeft.style.cssText = 'display: flex; align-items: center; gap: 1.5rem;';
@@ -356,9 +364,14 @@ function drawDashboardContent(container) {
   const doubleColumnTabs = ['detector', 'compare', 'favorites'];
   const isDoubleColumn = doubleColumnTabs.includes(state.activeTab);
   dynamicGrid.className = `dashboard-grid ${isDoubleColumn ? 'double-column' : ''}`;
-  mainContent.appendChild(statsGrid);
-  mainContent.appendChild(waterTracker);
   mainContent.appendChild(dynamicGrid);
+  
+  if (!['progress', 'intake', 'burn'].includes(state.activeTab)) {
+    mainContent.appendChild(statsGrid);
+  }
+  if (state.activeTab !== 'water') {
+    mainContent.appendChild(waterTracker);
+  }
 
   // RENDER CORRESPONDING TAB VIEW
   if (isDoubleColumn) {
@@ -368,7 +381,7 @@ function drawDashboardContent(container) {
   }
 
   // Render right interactive column
-  const rightTabPanel = renderRightTabPanel(container);
+  const rightTabPanel = renderRightTabPanel(container, { triggerWaterUpdate });
   dynamicGrid.appendChild(rightTabPanel);
 
   // Instantiations post DOM mounting
@@ -645,7 +658,7 @@ function renderLeftGallery() {
 }
 
 // Render active tab view panel
-function renderRightTabPanel(container) {
+function renderRightTabPanel(container, actions = {}) {
   const card = document.createElement('div');
   const isDoubleColumn = ['detector', 'compare', 'favorites'].includes(state.activeTab);
   card.className = `card dashboard-card-panel custom-scroll ${isDoubleColumn ? 'double-column-active' : ''}`;
@@ -1239,6 +1252,214 @@ function renderRightTabPanel(container) {
         `;
       };
       recalcBmiVisuals(rightBCard);
+      break;
+    }
+
+    case 'progress': {
+      const totalConsumed = todayLog?.totalCaloriesConsumed || 0;
+      const totalBurned = todayLog?.totalCaloriesBurned || 0;
+      const netCalories = totalConsumed - totalBurned;
+      const goal = state.user.dailyCalorieGoal || 2000;
+      const remaining = goal - netCalories;
+      const progressPercent = Math.min(Math.max((netCalories / goal) * 100, 0), 100);
+
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 3rem;">
+          <div style="width: 42px; height: 42px; border-radius: 0.75rem; background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="target" style="width: 20px; height: 20px; color: var(--accent);"></i>
+          </div>
+          <h2 style="font-size: 1.45rem; font-weight: 800; margin: 0; font-family: var(--font-display); color: var(--text-primary); letter-spacing: -0.02em;">Daily Calorie Progress</h2>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2.5rem; padding: 3rem 2rem; background: rgba(255,255,255,0.01); border: 1px solid var(--glass-border); border-radius: 2rem;">
+          <div style="position: relative; width: 200px; height: 200px;">
+            <canvas id="tabProgressCalorieChart" width="200" height="200"></canvas>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;">
+              <div style="font-size: 2.5rem; font-weight: 900; font-family: var(--font-display); color: var(--accent); line-height: 1;">${Math.round(progressPercent)}%</div>
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.05em; margin-top: 0.25rem; text-transform: uppercase;">Achieved</div>
+            </div>
+          </div>
+          <div style="text-align: center; width: 100%;">
+            <div style="font-size: 2rem; font-weight: 800; margin-bottom: 0.75rem; font-family: var(--font-display); color: var(--text-primary); letter-spacing: -0.02em;">
+              ${remaining > 0 ? `${remaining} kcal remaining to goal` : '🎉 Target Achieved!'}
+            </div>
+            <p class="text-secondary" style="font-size: 1.05rem; font-family: var(--font-body); margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto;">
+              Your net calorie count is <strong>${netCalories} kcal</strong> out of your <strong>${goal} kcal</strong> daily limit.
+            </p>
+            <div style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 1rem; color: var(--text-secondary); font-size: 0.9rem; font-weight: 600;">
+              <i data-lucide="info" style="width: 16px; height: 16px; color: var(--accent);"></i>
+              <span>Net Calories = Consumed (${totalConsumed}) - Burned (${totalBurned})</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      setTimeout(() => {
+        const progressCtx = document.getElementById('tabProgressCalorieChart');
+        if (progressCtx) {
+          new Chart(progressCtx, {
+            type: 'doughnut',
+            data: {
+              labels: ['Consumed', 'Remaining'],
+              datasets: [{
+                data: [netCalories, Math.max(goal - netCalories, 0)],
+                backgroundColor: ['#10b981', state.theme === 'light' ? '#cbd5e1' : 'rgba(255, 255, 255, 0.05)'],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              cutout: '80%',
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+              }
+            }
+          });
+        }
+      }, 50);
+      break;
+    }
+
+    case 'intake': {
+      const totalConsumed = todayLog?.totalCaloriesConsumed || 0;
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 3rem;">
+          <div style="width: 42px; height: 42px; border-radius: 0.75rem; background: rgba(59, 130, 246, 0.08); border: 1.5px solid rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="utensils" style="width: 20px; height: 20px; color: var(--primary-blue);"></i>
+          </div>
+          <h2 style="font-size: 1.45rem; font-weight: 800; margin: 0; font-family: var(--font-display); color: var(--text-primary); letter-spacing: -0.02em;">Intake Log Summary</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+          <div class="card" style="padding: 2rem; text-align: center; background: rgba(59, 130, 246, 0.02); border-color: rgba(59, 130, 246, 0.15);">
+            <div class="text-secondary" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-family: var(--font-body);">Total Calories Consumed</div>
+            <div style="font-size: 2.5rem; font-weight: 900; font-family: var(--font-display); color: var(--text-primary);">${totalConsumed} <span style="font-size: 1.1rem; color: var(--text-secondary); font-weight: 500;">kcal</span></div>
+          </div>
+          <div class="card" style="padding: 2rem; text-align: center;">
+            <div class="text-secondary" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-family: var(--font-body);">Meals Logged Today</div>
+            <div style="font-size: 2.5rem; font-weight: 900; font-family: var(--font-display); color: var(--text-primary);">${todayLog?.meals?.length || 0} <span style="font-size: 1.1rem; color: var(--text-secondary); font-weight: 500;">meals</span></div>
+          </div>
+        </div>
+        <div class="card" style="padding: 2.25rem;">
+          <h4 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 1.75rem; font-family: var(--font-display); color: var(--text-primary);">Meal Window Breakdown</h4>
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            ${['Breakfast', 'Lunch', 'Dinner', 'Snacks'].map(type => {
+              const typeMeals = todayLog?.meals?.filter(m => m.mealType === type) || [];
+              const typeCals = typeMeals.reduce((acc, curr) => acc + (curr.food?.calories * curr.quantity || 0), 0);
+              const typePercent = totalConsumed > 0 ? (typeCals / totalConsumed) * 100 : 0;
+              return `
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary); font-family: var(--font-display);">
+                    <span>${type}</span>
+                    <span>${typeCals} kcal (${Math.round(typePercent)}%)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.03); border-radius: 6px; overflow: hidden; border: 1px solid var(--border);">
+                    <div style="width: ${typePercent}%; height: 100%; background: var(--primary-blue); border-radius: 6px; box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);"></div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+      break;
+    }
+
+    case 'burn': {
+      const totalBurned = todayLog?.totalCaloriesBurned || 0;
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 3rem;">
+          <div style="width: 42px; height: 42px; border-radius: 0.75rem; background: rgba(245, 158, 11, 0.08); border: 1.5px solid rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="flame" style="width: 20px; height: 20px; color: #f59e0b;"></i>
+          </div>
+          <h2 style="font-size: 1.45rem; font-weight: 800; margin: 0; font-family: var(--font-display); color: var(--text-primary); letter-spacing: -0.02em;">Active Burn Summary</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+          <div class="card" style="padding: 2rem; text-align: center; background: rgba(245, 158, 11, 0.02); border-color: rgba(245, 158, 11, 0.15);">
+            <div class="text-secondary" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-family: var(--font-body);">Active Calories Burned</div>
+            <div style="font-size: 2.5rem; font-weight: 900; font-family: var(--font-display); color: var(--text-primary);">${totalBurned} <span style="font-size: 1.1rem; color: var(--text-secondary); font-weight: 500;">kcal</span></div>
+          </div>
+          <div class="card" style="padding: 2rem; text-align: center;">
+            <div class="text-secondary" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-family: var(--font-body);">Workouts Logged</div>
+            <div style="font-size: 2.5rem; font-weight: 900; font-family: var(--font-display); color: var(--text-primary);">${todayLog?.activities?.length || 0} <span style="font-size: 1.1rem; color: var(--text-secondary); font-weight: 500;">workouts</span></div>
+          </div>
+        </div>
+        <div class="card" style="padding: 2.25rem;">
+          <h4 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 1.75rem; font-family: var(--font-display); color: var(--text-primary);">Logged Activities</h4>
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            ${todayLog?.activities?.length > 0 ? todayLog.activities.map(act => `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; background: rgba(255,255,255,0.01); border: 1px solid var(--glass-border); border-radius: 1rem; transition: var(--transition);">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                  <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="dumbbell" style="width: 18px; height: 18px; color: #f59e0b;"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 800; color: var(--text-primary); font-size: 1.05rem; font-family: var(--font-display);">${act.name}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; font-family: var(--font-body);">${act.durationMinutes} minutes duration</div>
+                  </div>
+                </div>
+                <div style="font-weight: 900; color: #f59e0b; font-family: var(--font-display); font-size: 1.35rem;">-${act.caloriesBurned} <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">kcal</span></div>
+              </div>
+            `).join('') : `
+              <div style="text-align: center; padding: 4rem 1rem; opacity: 0.3; display: flex; flex-direction: column; align-items: center; gap: 0.75rem;">
+                <i data-lucide="flame" style="width: 44px; height: 44px; color: var(--text-secondary);"></i>
+                <h4 style="font-family: var(--font-display); font-weight: 700; margin: 0;">Logbook Empty</h4>
+                <p style="font-size: 0.85rem; font-family: var(--font-body); max-width: 250px; margin: 0 auto;">No physical activities recorded today. Use the Exercise tab to log a workout!</p>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+      break;
+    }
+
+    case 'water': {
+      const currentWater = todayLog?.waterIntake || 0;
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 3rem;">
+          <div style="width: 42px; height: 42px; border-radius: 0.75rem; background: rgba(59, 130, 246, 0.08); border: 1.5px solid rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="droplet" style="width: 20px; height: 20px; color: var(--primary-blue);"></i>
+          </div>
+          <h2 style="font-size: 1.45rem; font-weight: 800; margin: 0; font-family: var(--font-display); color: var(--text-primary); letter-spacing: -0.02em;">Hydration Control Center</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 3rem; align-items: center; padding: 3rem 2rem; background: rgba(255,255,255,0.01); border-radius: 2rem; border: 1px solid var(--glass-border);">
+          <!-- 3D Glass Cylinder Simulation -->
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
+            <div class="water-container" style="width: 100px; height: 200px; border-radius: 1.5rem; border: 3px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.02); overflow: hidden; position: relative; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);">
+              <div class="water-fluid" style="position: absolute; bottom: 0; left: 0; width: 100%; transition: height 0.5s ease; background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%); height: ${Math.min((currentWater / 8) * 100, 100)}%;"></div>
+            </div>
+            <div style="text-align: center;">
+              <span style="font-size: 2.2rem; font-weight: 900; color: var(--text-primary); font-family: var(--font-display);">${currentWater}</span>
+              <span style="font-size: 1.1rem; color: var(--text-secondary); font-weight: 700; font-family: var(--font-display);">/ 8 Glasses</span>
+            </div>
+          </div>
+          <!-- Interactive Controls -->
+          <div>
+            <h4 style="font-size: 1.45rem; font-weight: 800; margin-bottom: 0.75rem; font-family: var(--font-display); color: var(--text-primary); letter-spacing: -0.01em;">Log Fluid Intake</h4>
+            <p class="text-secondary" style="font-size: 1rem; line-height: 1.6; margin-bottom: 2rem; font-family: var(--font-body);">Your daily hydration target is 8 Glasses (approx 2.5 Liters). Keeping fully hydrated accelerates metabolism, improves cognitive focus, and aids physical performance.</p>
+            
+            <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 2rem;">
+              <button class="btn btn-outline sub-water-btn-tab" style="flex: 1; padding: 0.875rem; border-radius: 0.875rem; border-color: rgba(255,255,255,0.1); color: var(--text-secondary); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"><i data-lucide="minus" style="width: 18px; height: 18px;"></i></button>
+              <button class="btn add-water-btn-tab" style="flex: 1.5; padding: 0.875rem; border-radius: 0.875rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer;"><i data-lucide="plus" style="width: 18px; height: 18px;"></i> Drink Glass</button>
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; justify-content: center;">
+              ${Array.from({ length: 8 }).map((_, i) => `
+                <div style="width: 14px; height: 14px; border-radius: 50%; background: ${i < currentWater ? 'var(--primary-blue)' : 'rgba(255,255,255,0.04)'}; border: 1px solid rgba(59, 130, 246, 0.4); box-shadow: ${i < currentWater ? '0 0 10px rgba(59, 130, 246, 0.5)' : 'none'}; transition: all 0.3s ease;"></div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+      
+      setTimeout(() => {
+        const tabSubBtn = card.querySelector('.sub-water-btn-tab');
+        const tabAddBtn = card.querySelector('.add-water-btn-tab');
+        if (tabSubBtn && tabAddBtn && actions.triggerWaterUpdate) {
+          tabSubBtn.addEventListener('click', () => actions.triggerWaterUpdate(-1));
+          tabAddBtn.addEventListener('click', () => actions.triggerWaterUpdate(1));
+        }
+      }, 50);
       break;
     }
 
