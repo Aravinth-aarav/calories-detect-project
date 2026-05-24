@@ -356,9 +356,9 @@ function drawDashboardContent(container) {
   const doubleColumnTabs = ['detector', 'compare', 'favorites'];
   const isDoubleColumn = doubleColumnTabs.includes(state.activeTab);
   dynamicGrid.className = `dashboard-grid ${isDoubleColumn ? 'double-column' : ''}`;
-  mainContent.appendChild(dynamicGrid);
   mainContent.appendChild(statsGrid);
   mainContent.appendChild(waterTracker);
+  mainContent.appendChild(dynamicGrid);
 
   // RENDER CORRESPONDING TAB VIEW
   if (isDoubleColumn) {
