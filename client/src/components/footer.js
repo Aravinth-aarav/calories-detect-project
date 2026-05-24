@@ -1,4 +1,4 @@
-import { state, navigateTo } from '../main.js';
+import { state, navigateTo, showToast } from '../main.js';
 
 export function renderFooter() {
   const footer = document.createElement('footer');
@@ -32,9 +32,9 @@ export function renderFooter() {
       Empowering you to make smarter, healthier food choices. Track your intake, analyze nutrient composition, and hit your fitness milestones with precision.
     </p>
     <div style="display: flex; gap: 1rem;">
-      <a href="#" class="social-icon" aria-label="Website" style="color: var(--text-secondary); padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i data-lucide="globe" style="width: 18px; height: 18px;"></i></a>
-      <a href="#" class="social-icon" aria-label="Email" style="color: var(--text-secondary); padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i data-lucide="mail" style="width: 18px; height: 18px;"></i></a>
-      <a href="#" class="social-icon" aria-label="Phone" style="color: var(--text-secondary); padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i data-lucide="phone" style="width: 18px; height: 18px;"></i></a>
+      <a href="https://github.com/Aravinth-aarav" target="_blank" class="social-icon" aria-label="Website" style="color: var(--text-secondary); padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i data-lucide="globe" style="width: 18px; height: 18px;"></i></a>
+      <a href="mailto:aravithasamyc@gmail.com" class="social-icon" aria-label="Email" style="color: var(--text-secondary); padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i data-lucide="mail" style="width: 18px; height: 18px;"></i></a>
+      <a href="#" class="social-icon social-phone" aria-label="Phone" style="color: var(--text-secondary); padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i data-lucide="phone" style="width: 18px; height: 18px;"></i></a>
     </div>
   `;
   // Bind logo link
@@ -59,6 +59,12 @@ export function renderFooter() {
       icon.style.background = 'rgba(255,255,255,0.03)';
       icon.style.transform = 'none';
     });
+  });
+
+  // Bind phone button
+  brandCol.querySelector('.social-phone').addEventListener('click', (e) => {
+    e.preventDefault();
+    showToast('📞 Support Line: Contact Aravinth via email or college mainframes!', 'info');
   });
   container.appendChild(brandCol);
 
@@ -120,6 +126,21 @@ export function renderFooter() {
       link.style.color = 'var(--text-secondary)';
       link.style.transform = 'none';
     });
+
+    // Bind click events for mock links to make everything interactive and functional
+    if (link.getAttribute('href') === '#') {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const text = link.textContent.trim();
+        if (text === 'About Us') {
+          showToast('ℹ️ CalorieDetect Pro v1.0.0 - Built as a 2nd Semester Project by Aravinth!', 'success');
+        } else if (text === 'Terms of Service' || text === 'Privacy Policy') {
+          showToast(`⚖️ ${text}: All your diet biometrics are encrypted and fully private.`, 'success');
+        } else {
+          showToast(`🚀 "${text}" will be unlocked in the premium release!`, 'info');
+        }
+      });
+    }
   });
 
   // Bottom Area
