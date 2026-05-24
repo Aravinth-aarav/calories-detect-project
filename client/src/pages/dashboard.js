@@ -170,7 +170,6 @@ function drawDashboardContent(container) {
   // 3. Header & Overview Section
   const dashboardHeader = document.createElement('section');
   dashboardHeader.className = 'dashboard-header';
-  mainContent.appendChild(dashboardHeader);
 
   // Welcome banner row
   const welcomeRow = document.createElement('div');
@@ -283,7 +282,6 @@ function drawDashboardContent(container) {
     flex-wrap: wrap;
     gap: 2rem;
   `;
-  mainContent.appendChild(waterTracker);
 
   const waterLeft = document.createElement('div');
   waterLeft.style.cssText = 'display: flex; align-items: center; gap: 1.5rem;';
@@ -361,6 +359,8 @@ function drawDashboardContent(container) {
   const isDoubleColumn = doubleColumnTabs.includes(state.activeTab);
   dynamicGrid.className = `dashboard-grid ${isDoubleColumn ? 'double-column' : ''}`;
   mainContent.appendChild(dynamicGrid);
+  mainContent.appendChild(dashboardHeader);
+  mainContent.appendChild(waterTracker);
 
   // RENDER CORRESPONDING TAB VIEW
   if (isDoubleColumn) {
