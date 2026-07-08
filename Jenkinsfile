@@ -6,7 +6,7 @@ pipeline {
         // Jenkins Credentials & Server Configurations
         // ==========================================
         // Add your AWS EC2 SSH Private Key (.pem file) as a "SSH Username with private key" credential in Jenkins
-        SSH_CRED_ID = 'ec2-ssh-key' 
+        SSH_CRED_ID = 'calories-ec2-key' 
         
         // The default username for Ubuntu AMI on AWS is 'ubuntu'
         EC2_USER = 'ubuntu'
