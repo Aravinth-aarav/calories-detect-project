@@ -12,8 +12,9 @@ pipeline {
         EC2_USER = 'ubuntu'
         
         // REPLACE THIS with your AWS EC2 Instance's Public IP or Domain
-        EC2_IP = '13.232.12.126'
-        
+        // In Jenkinsfile
+        EC2_IP = 'calories-detect.rvscasmcafsd2k25.in'
+
         // Destination directory on your AWS EC2 instance
         APP_DIR = '/var/www/calories-detect'
     }
