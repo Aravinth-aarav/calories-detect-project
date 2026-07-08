@@ -16,7 +16,7 @@ pipeline {
         EC2_IP = 'calories-detect.rvscasmcafsd2k25.in'
 
         // Destination directory on your AWS EC2 instance
-        APP_DIR = '/var/www/calories-detect'
+        APP_DIR = '/var/www/calories-detect/calories-detect-project'
     }
 
     stages {
