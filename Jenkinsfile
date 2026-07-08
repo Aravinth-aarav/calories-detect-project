@@ -45,6 +45,11 @@ pipeline {
                 // Use withCredentials to get SSH Key path on Windows
                 withCredentials([sshUserPrivateKey(credentialsId: env.SSH_CRED_ID, keyFileVariable: 'KEY_FILE', usernameVariable: 'SSH_USER')]) {
                     powershell '''
+                        # Secure the temporary private key file (required by OpenSSH on Windows)
+                        $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+                        icacls.exe $env:KEY_FILE /inheritance:r
+                        icacls.exe $env:KEY_FILE /grant:r "${currentUser}:R"
+
                         # 1. Create target directories on the EC2 instance
                         ssh -i $env:KEY_FILE -o StrictHostKeyChecking=no ${env:SSH_USER}@${env:EC2_IP} "mkdir -p ${env:APP_DIR}/client/dist ${env:APP_DIR}/server"
                         
