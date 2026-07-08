@@ -17,7 +17,7 @@ export function renderNavbar() {
   logoLink.style.gap = '0.625rem';
   logoLink.innerHTML = `
     <i data-lucide="activity" style="width: 30px; height: 30px; stroke-width: 2.5;"></i>
-    <span style="font-weight: 800; font-family: var(--font-display);">CalorieDetect Pro</span>
+    <span style="font-weight: 800; font-family: var(--font-display);">CalorieDetect Pro AI</span>
   `;
   logoLink.addEventListener('click', (e) => {
     e.preventDefault();
