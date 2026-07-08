@@ -53,8 +53,11 @@ pipeline {
                         # 1. Create target directories on the EC2 instance
                         ssh -i $env:KEY_FILE -o StrictHostKeyChecking=no ${env:SSH_USER}@${env:EC2_IP} "mkdir -p ${env:APP_DIR}/client/dist ${env:APP_DIR}/server"
                         
-                        # 2. Transfer built frontend static files
-                        scp -i $env:KEY_FILE -r -o StrictHostKeyChecking=no client/dist/* ${env:SSH_USER}@${env:EC2_IP}:${env:APP_DIR}/client/dist/
+                        # 2. Package frontend dist and transfer
+                        tar -czf dist.tar.gz -C client/dist .
+                        scp -i $env:KEY_FILE -o StrictHostKeyChecking=no dist.tar.gz ${env:SSH_USER}@${env:EC2_IP}:${env:APP_DIR}/client/
+                        ssh -i $env:KEY_FILE -o StrictHostKeyChecking=no ${env:SSH_USER}@${env:EC2_IP} "tar -xzf ${env:APP_DIR}/client/dist.tar.gz -C ${env:APP_DIR}/client/dist/ && rm ${env:APP_DIR}/client/dist.tar.gz"
+                        Remove-Item dist.tar.gz
                         
                         # 3. Transfer backend server files (excluding node_modules, .env, and .git)
                         Get-ChildItem -Path server -Exclude "node_modules", ".env", ".git" | ForEach-Object {
