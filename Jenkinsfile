@@ -31,12 +31,9 @@ pipeline {
             steps {
                 echo 'Installing frontend dependencies and building React assets...'
                 dir('client') {
-                    // Install dependencies
-                    sh 'npm install'
-                    
-                    // Build frontend with the production API URL set to '/api'
-                    // This lets Nginx route the requests to the backend locally
-                    sh 'VITE_API_URL=/api npm run build'
+                    // Windows cmd commands
+                    bat 'npm install'
+                    bat 'set VITE_API_URL=/api&& npm run build'
                 }
             }
         }
@@ -45,30 +42,23 @@ pipeline {
             steps {
                 echo 'Deploying files to AWS EC2 instance...'
                 
-                // Wrap commands in sshagent to load the SSH key automatically
-                sshagent(credentials: [env.SSH_CRED_ID]) {
-                    // 1. Ensure target directories exist on the EC2 instance
-                    sh "ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} 'mkdir -p ${APP_DIR}/client/dist ${APP_DIR}/server'"
-                    
-                    // 2. Transfer built frontend static files
-                    sh "rsync -avz -e 'ssh -o StrictHostKeyChecking=no' client/dist/ ${EC2_USER}@${EC2_IP}:${APP_DIR}/client/dist/"
-                    
-                    // 3. Transfer backend server files (excluding node_modules and .env files to preserve environment configuration)
-                    sh "rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --exclude 'node_modules' --exclude '.env' server/ ${EC2_USER}@${EC2_IP}:${APP_DIR}/server/"
-                    
-                    // 4. Connect to EC2 to install server dependencies and restart PM2
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
-                            cd ${APP_DIR}/server
-                            
-                            # Install production dependencies
-                            npm install --production
-                            
-                            # Restart or start the backend process using PM2
-                            pm2 restart calories-backend || pm2 start server.js --name "calories-backend"
-                            pm2 save
-                        '
-                    """
+                // Use withCredentials to get SSH Key path on Windows
+                withCredentials([sshUserPrivateKey(credentialsId: env.SSH_CRED_ID, keyFileVariable: 'KEY_FILE', usernameVariable: 'SSH_USER')]) {
+                    powershell '''
+                        # 1. Create target directories on the EC2 instance
+                        ssh -i $env:KEY_FILE -o StrictHostKeyChecking=no ${env:SSH_USER}@${env:EC2_IP} "mkdir -p ${env:APP_DIR}/client/dist ${env:APP_DIR}/server"
+                        
+                        # 2. Transfer built frontend static files
+                        scp -i $env:KEY_FILE -r -o StrictHostKeyChecking=no client/dist/* ${env:SSH_USER}@${env:EC2_IP}:${env:APP_DIR}/client/dist/
+                        
+                        # 3. Transfer backend server files (excluding node_modules, .env, and .git)
+                        Get-ChildItem -Path server -Exclude "node_modules", ".env", ".git" | ForEach-Object {
+                            scp -i $env:KEY_FILE -r -o StrictHostKeyChecking=no $_.FullName "${env:SSH_USER}@${env:EC2_IP}:${env:APP_DIR}/server/"
+                        }
+                        
+                        # 4. Connect to EC2 to install server dependencies and restart PM2
+                        ssh -i $env:KEY_FILE -o StrictHostKeyChecking=no ${env:SSH_USER}@${env:EC2_IP} "cd ${env:APP_DIR}/server && npm install --production && (pm2 restart calories-backend || pm2 start server.js --name 'calories-backend') && pm2 save"
+                    '''
                 }
                 echo 'Deployment successfully completed!'
             }
